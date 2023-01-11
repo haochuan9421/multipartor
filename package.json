@@ -1,0 +1,42 @@
+{
+  "name": "multipartor",
+  "version": "1.0.0",
+  "description": "A streaming parser for multipart/form-data",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "files": [
+    "index.js",
+    "index.d.ts"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "bench": "node benchmark/index.js"
+  },
+  "keywords": [
+    "multipart",
+    "form-data",
+    "file-upload"
+  ],
+  "author": "haochuan9421 <hc199421@gmail.com>",
+  "dependencies": {
+    "fast-streamsearch": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^18.11.18",
+    "busboy": "^1.6.0",
+    "formidable": "^2.1.1",
+    "typescript": "^4.9.4"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:haochuan9421/multipartor.git"
+  },
+  "bugs": {
+    "url": "https://github.com/haochuan9421/multipartor/issues"
+  },
+  "homepage": "https://github.com/haochuan9421/multipartor",
+  "license": "MIT"
+}
