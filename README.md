@@ -55,7 +55,7 @@ http
         },
       })
         .then((result) => {
-          res.setHeader("content-type", "text/plain;charset=utf-8");
+          res.setHeader("content-type", "application/json; charset=utf-8");
           res.end(JSON.stringify(result, null, 2));
         })
         .catch((err) => {
@@ -63,7 +63,7 @@ http
         });
     } else {
       // 返回一个 form 表单，用于提交 multipart/form-data 类型的请求
-      res.setHeader("content-type", "text/html;charset=utf-8");
+      res.setHeader("content-type", "text/html; charset=utf-8");
       res.end(`<form action="/submit" method="post" enctype="multipart/form-data">
     <input name="username" type="text" />
     <select name="interest" multiple>
@@ -145,3 +145,19 @@ http
   }
   ```
   由于同一个表单字段可能有多个值(比如某个可以多选的 `select` 字段，某个 `checkbox` 字段，某个支持选择多个文件的 `file` 字段等)，所以同一个字段的结果会以数组的形式保存，即使该字段的值只有一个，这种格式可以保证读取任意字段时，读取方式都是一致的。
+
+## Benchmarks
+
+下图的测试结果为分别使用 [busboy](https://www.npmjs.com/package/busboy), [formidable](https://www.npmjs.com/package/formidable) 和 [multipartor](https://www.npmjs.com/package/multipartor) 解析同一个包含了 30 个普通字段 (64KB 大小) 和 30 个文件字段(64MB 大小) 的请求体的情况。其中的 `Content-Length` 是请求体的大小，毫秒数代表解析开始到结束的时间差值，内存相关的数据是解析前后的进程内存占用差值。4 个图分别对应了 4 种不同的数据读写场景。
+
+1. `memory-read-no-write`: 请求体的数据已在内存中，解析到文件时，文件不写入磁盘。
+2. `memory-read-disk-write`: 请求体的数据已在内存中，解析到文件时，文件写入磁盘。
+3. `disk-read-no-write`: 请求体的数据从磁盘读取，解析到文件时，文件不写入磁盘。
+4. `disk-read-disk-write`: 请求体的数据从磁盘读取，解析到文件时，文件写入磁盘。
+
+<img alt="image" src="https://user-images.githubusercontent.com/5093611/212078779-330a79fa-2414-4714-a5ca-e60b585ffade.png">
+<img alt="image" src="https://user-images.githubusercontent.com/5093611/212078816-d8a64cf1-e7d0-4b38-a32f-432cabb64619.png">
+
+其中测试方法 1 可以测出理论上的最大解析速度，可以看到 `multipartor` 理论上会比 `busboy` 快 4 倍左右，比 `formidable` 快 6 倍左右! 但即使是最差的 `formidable` 也有高达 `3GB/s` 的理论解析速度 (由 `1.88GB/621ms` 得出)，由于请求体通常从网络读取，解析到的文件也通常需要写入磁盘，所以实际场景中的性能瓶颈往往并不在解析速度上，而在于磁盘的写入速度和服务器的上行带宽。
+
+其中测试方法 4 采用从本地文件读取数据（用文件可读流模拟网络请求的可读流），并将解析到的文件写入本地磁盘，该测试方法最能反应实际网络 IO 中三者的性能差距，可以看到 `multipartor` 依然有 30% 以上的性能优势。

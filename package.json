@@ -1,6 +1,6 @@
 {
   "name": "multipartor",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A streaming parser for multipart/form-data",
   "main": "index.js",
   "types": "index.d.ts",
@@ -10,7 +10,7 @@
   ],
   "scripts": {
     "build": "tsc",
-    "bench": "node benchmark/index.js"
+    "bench": "node benchmark/memory-read-no-write.js"
   },
   "keywords": [
     "multipart",

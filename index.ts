@@ -83,7 +83,6 @@ function multipartor(rs: Readable, opts?: opts): Promise<result> {
 
   return new Promise<[string, any][]>((_resolve, _reject) => {
     let settled = false;
-    let flowing = true;
     let state = STATES.UNSTART;
     let tmpChunks: Buffer[] = [];
     let misMatchSize = 0;
@@ -151,9 +150,8 @@ function multipartor(rs: Readable, opts?: opts): Promise<result> {
                 if (onFile && (meta as fileMeta).filename) {
                   file = new Readable({
                     read() {
-                      if (!flowing) {
-                        flowing = true;
-                        read();
+                      if (rs.isPaused()) {
+                        rs.resume();
                       }
                     },
                   });
@@ -244,7 +242,9 @@ function multipartor(rs: Readable, opts?: opts): Promise<result> {
               }
               if (file) {
                 // push 的返回值是 true 代表 file 还可以 push 新的内容进去，我们就没必要停止读取 rs，反之就需要暂停了，不然会导致数据积压在内存里
-                flowing = file.push(chunk!);
+                if (!file.push(chunk!) && !rs.isPaused()) {
+                  rs.pause();
+                }
               }
             } else {
               // 普通区块
@@ -267,12 +267,8 @@ function multipartor(rs: Readable, opts?: opts): Promise<result> {
 
     searcher.push(Buffer.from("\r\n"));
 
-    function read() {
-      if (settled || !flowing) {
-        return;
-      }
-      const chunk = rs.read();
-      if (chunk === null) {
+    function onData(chunk: Buffer) {
+      if (settled) {
         return;
       }
       totalSize += chunk.length;
@@ -280,7 +276,6 @@ function multipartor(rs: Readable, opts?: opts): Promise<result> {
         return reject(new Error("Total size exceeded the limit"));
       }
       searcher.push(chunk);
-      read();
     }
     const onEnd = (() => {
       let called = false;
@@ -300,7 +295,7 @@ function multipartor(rs: Readable, opts?: opts): Promise<result> {
     })();
     function cleanUp() {
       settled = true;
-      rs.removeListener("readable", read);
+      rs.removeListener("data", onData);
       rs.removeListener("error", reject);
       rs.removeListener("end", onEnd);
       if (fromV16) {
@@ -331,7 +326,7 @@ function multipartor(rs: Readable, opts?: opts): Promise<result> {
       cleanUp();
       _reject(err);
     }
-    rs.on("readable", read);
+    rs.on("data", onData);
     rs.on("error", reject);
     rs.on("end", onEnd); // 只会在请求结束时触发，如果请求被取消了，这个事件不会触发
     if (fromV16) {
