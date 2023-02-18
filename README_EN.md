@@ -128,14 +128,16 @@ http
       // 3. "cb"   parameter is a callback function, if an error occurs during your dump file process, the error message should be called back to notify "multipartor" to end the parsing of the whole request body, if no error occurs, the first parameter of the callback is "null", the second parameter is the result of the your dump, the result will be put into the return value of the "multipartor" function
       // 4. Instead of using the "cb" parameter to call back the result, the "onFile" function can also inform the result by returning a Promise
       onFile?: (file: Readable, meta: fileMeta, cb: (err: null | Error, data?: any) => void) => void | Promise<any>;
+      // Format of the return value, default "common"
+      resultFormat?: "array" | "common";
     }
     ```
   - description: Parsing configuration, refer to the comments above for details.
 
 ## Return value of multipartor
 
-- type: `Promise<{ [key: string]: any[] }>`
-- description: The result of parsing the entire request body. For example:
+- If `opts.resultFormat = "array"`, then the return value type is `Promise<{ [key: string]: any[] }>`, for example:
+
   ```json
   {
     "username": ["😊"],
@@ -144,11 +146,25 @@ http
     "doc": ["upload/8910049773055626.MP4", "upload/5344086262626364.pdf"]
   }
   ```
-  Since a form field may have multiple values (e.g., a `select` field that can be multi-selected, a `checkbox` field, a `file` field that supports multiple file uploads, etc.), the results of a field are stored in an array, even if the field has only one value, a format that ensures that when any field is read, it is read in the same way.
+
+  Since a form field may has multiple values (e.g., `select`, `checkbox` and `file` that supports multiple file uploads), the values of a field are always stored in an array, even if the field has only one value, this format ensures that when read any field values, it is read in the same way.
+
+- If `opts.resultFormat = "common"` (default), then the return value type is `Promise<{ [key: string]: any }>`, for example:
+
+  ```json
+  {
+    "username": "😊",
+    "interest": ["coding", "music", "game"],
+    "avatar": "upload/08948277734749754.png",
+    "doc": ["upload/8910049773055626.MP4", "upload/5344086262626364.pdf"]
+  }
+  ```
+
+  Array is only used when one field has multiple values.
 
 ## Benchmarks
 
-The following figure shows the results of parsing the same request body with 30 field parts (64KB) and 30 file parts (64MB) using [busboy](https://www.npmjs.com/package/busboy), [formidable](https://www.npmjs.com/package/formidable) and [multipartor]( https://www.npmjs.com/package/multipartor). The `Content-Length` is the size of the request body, the number of milliseconds represents the time difference between the beginning and the end of parsing, and the memory-related data is the difference in the process memory usage between the beginning and the end of parsing. 4 plots correspond to 4 different data reading and writing scenarios.
+The following figure shows the results of parsing the same request body with 30 field parts (64KB) and 30 file parts (64MB) using [busboy](https://www.npmjs.com/package/busboy), [formidable](https://www.npmjs.com/package/formidable) and [multipartor](https://www.npmjs.com/package/multipartor). The `Content-Length` is the size of the request body, the number of milliseconds represents the time difference between the beginning and the end of parsing, and the memory-related data is the difference in the process memory usage between the beginning and the end of parsing. 4 plots correspond to 4 different data reading and writing scenarios.
 
 1. `memory-read-no-write`: The data of the request body is already in memory and when a file part is encountered, the file is not written to disk.
 2. `memory-read-disk-write`: The data of the request body is already in memory and when a file part is encountered, the file is written to disk.

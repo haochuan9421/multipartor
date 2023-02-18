@@ -44,9 +44,12 @@ type opts = {
   // 3. cb   参数是回调函数，如果转存的过程中发生了错误，需要回调错误信息，以通知 multipartor 结束整个请求体的解析，如果没有发生错误，回调的第一个参数是 null，第二个参数是转存结果，转存结果会放入 multipartor 函数的返回值
   // 4. onFile 函数也可以不使用 cb 参数回调结果，而是通过返回一个 Promise 来告知结果
   onFile?: (file: Readable, meta: fileMeta, cb: (err: null | Error, data?: any) => void) => void | Promise<any>;
+  // 返回值的格式，默认值 "common"
+  resultFormat?: "array" | "common";
 };
 
-type result = { [key: string]: any[] };
+type arrayResult = { [key: string]: any[] };
+type commonResult = { [key: string]: any };
 
 enum STATES {
   UNSTART,
@@ -58,7 +61,9 @@ enum STATES {
 
 const fromV16 = parseInt(process.version.replace(/^v/, "")) >= 16;
 
-function multipartor(rs: Readable, opts?: opts): Promise<result> {
+function multipartor(rs: Readable, opts?: opts & { resultFormat?: "array" }): Promise<arrayResult>;
+function multipartor(rs: Readable, opts?: opts & { resultFormat?: "common" }): Promise<commonResult>;
+function multipartor(rs: Readable, opts?: opts): Promise<arrayResult | commonResult> {
   if (!(rs instanceof Readable)) {
     throw new Error(`Expected readable stream, got ${typeof rs}`);
   }
@@ -335,16 +340,26 @@ function multipartor(rs: Readable, opts?: opts): Promise<result> {
       rs.on("aborted", onEnd); // 请求被取消时触发，但是从 v17.0.0, v16.12.0 开始被废弃了
     }
   }).then((parts) => {
-    const result: result = {};
+    const arrayResult: arrayResult = {};
     for (let i = 0; i < parts.length; i++) {
       const [name, value] = parts[i];
-      if (result.hasOwnProperty(name)) {
-        result[name].push(value);
+      if (Object.hasOwnProperty.call(arrayResult, name)) {
+        arrayResult[name].push(value);
       } else {
-        result[name] = [value];
+        arrayResult[name] = [value];
       }
     }
-    return result;
+
+    if (opts?.resultFormat === "array") {
+      return arrayResult;
+    }
+
+    const commonResult: commonResult = {};
+    for (const name in arrayResult) {
+      const value = arrayResult[name];
+      commonResult[name] = value.length === 1 ? value[0] : value;
+    }
+    return commonResult;
   });
 }
 

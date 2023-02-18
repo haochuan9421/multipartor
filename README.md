@@ -128,14 +128,16 @@ http
       // 3. cb   参数是回调函数，如果转存的过程中发生了错误，需要回调错误信息，以通知 multipartor 结束整个请求体的解析，如果没有发生错误，回调的第一个参数是 null，第二个参数是转存结果，转存结果会放入 multipartor 函数的返回值
       // 4. onFile 函数也可以不使用 cb 参数回调结果，而是通过返回一个 Promise 来告知结果
       onFile?: (file: Readable, meta: fileMeta, cb: (err: null | Error, data?: any) => void) => void | Promise<any>;
+      // 返回值的格式，默认值 "common"
+      resultFormat?: "array" | "common";
     }
     ```
   - 说明: 解析配置，具体参考上面注释。
 
 ## multipartor 的返回值
 
-- 类型: `Promise<{ [key: string]: any[] }>`
-- 说明: 整个请求体的解析结果。如:
+- 如果 `opts.resultFormat = "array"`，则返回值类型为 `Promise<{ [key: string]: any[] }>`，比如:
+
   ```json
   {
     "username": ["😊"],
@@ -144,7 +146,21 @@ http
     "doc": ["upload/8910049773055626.MP4", "upload/5344086262626364.pdf"]
   }
   ```
-  由于同一个表单字段可能有多个值(比如某个可以多选的 `select` 字段，某个 `checkbox` 字段，某个支持选择多个文件的 `file` 字段等)，所以同一个字段的结果会以数组的形式保存，即使该字段的值只有一个，这种格式可以保证读取任意字段时，读取方式都是一致的。
+
+  由于表单的同一个字段可能有多个值(比如可以多选的 `select`，`checkbox` 以及支持多文件上传的 `file`)，所以字段的值会始终以数组的形式保存，即使该字段的值只有一个，这种格式可以保证读取任意字段的值时，读取方式都是一致的。
+
+- 如果 `opts.resultFormat = "common"`（默认值），则返回值类型为 `Promise<{ [key: string]: any }>`，比如:
+
+  ```json
+  {
+    "username": "😊",
+    "interest": ["coding", "music", "game"],
+    "avatar": "upload/08948277734749754.png",
+    "doc": ["upload/8910049773055626.MP4", "upload/5344086262626364.pdf"]
+  }
+  ```
+
+  只有在表单的同一个字段有多个值时才会使用数组保存。
 
 ## Benchmarks
 
