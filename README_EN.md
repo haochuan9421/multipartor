@@ -97,8 +97,8 @@ http
     {
       // "boundary" can be specified, parse from rs.headers['content-type'] by default
       boundary?: string;
-      // Whether to automatically call rs.destory() and file.destory() in case of errors in the request body parsing process, default is true
-      autoDestory?: boolean;
+      // Whether to automatically call rs.destroy() and file.destroy() in case of errors in the request body parsing process, default is true
+      autoDestroy?: boolean;
       // Various limit-related parameters, exceeding the limit will reject error and stop parsing
       limits?: {
         // Number of field part, up to 256 by default

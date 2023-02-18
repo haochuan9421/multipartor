@@ -97,8 +97,8 @@ http
     {
       // 可指定 boundary，默认自动从 rs.headers['content-type'] 中解析
       boundary?: string;
-      // 请求体的解析过程出错时，是否自动调用 rs.destory() 和 file.destory()，默认是 true
-      autoDestory?: boolean;
+      // 请求体的解析过程出错时，是否自动调用 rs.destroy() 和 file.destroy()，默认是 true
+      autoDestroy?: boolean;
       // 各种限制相关的参数，超出限制后会报错并停止解析
       limits?: {
         // 普通区块的数量，默认最多 256 个
