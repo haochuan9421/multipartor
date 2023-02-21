@@ -2,6 +2,10 @@ import { Readable } from "stream";
 import StreamSearch from "fast-streamsearch";
 import { IncomingMessage } from "http";
 
+class PartFile extends Readable {
+  size: number = 0;
+}
+
 type fieldMeta = {
   name: string;
   mimeType?: string;
@@ -43,7 +47,7 @@ type opts = {
   // 2. meta 参数是区块的一些基本信息，比如: filename (原始文件名), mimeType (文件的 mime 类型)
   // 3. cb   参数是回调函数，如果转存的过程中发生了错误，需要回调错误信息，以通知 multipartor 结束整个请求体的解析，如果没有发生错误，回调的第一个参数是 null，第二个参数是转存结果，转存结果会放入 multipartor 函数的返回值
   // 4. onFile 函数也可以不使用 cb 参数回调结果，而是通过返回一个 Promise 来告知结果
-  onFile?: (file: Readable, meta: fileMeta, cb: (err: null | Error, data?: any) => void) => void | Promise<any>;
+  onFile?: (file: PartFile, meta: fileMeta, cb: (err: null | Error, data?: any) => void) => void | Promise<any>;
   // 返回值的格式，默认值 "common"
   resultFormat?: "array" | "common";
 };
@@ -96,7 +100,7 @@ function multipartor(rs: Readable, opts?: opts): Promise<arrayResult | commonRes
     let partHeaders = 0;
     let totalSize = 0;
     let meta: fieldMeta | fileMeta;
-    let file: null | Readable;
+    let file: null | PartFile;
     const parts: Promise<[string, any]>[] = [];
 
     const searcher = new StreamSearch(boundary, (isMatch, chunk) => {
@@ -153,7 +157,7 @@ function multipartor(rs: Readable, opts?: opts): Promise<arrayResult | commonRes
                 }
                 const name = meta.name;
                 if (onFile && (meta as fileMeta).filename) {
-                  file = new Readable({
+                  file = new PartFile({
                     read() {
                       if (rs.isPaused()) {
                         rs.resume();
@@ -187,6 +191,7 @@ function multipartor(rs: Readable, opts?: opts): Promise<arrayResult | commonRes
             if (meta.hasOwnProperty("filename")) {
               // 文件区块
               if (file) {
+                file.size = misMatchSize;
                 file.push(null); // 结束文件可读流
                 file = null;
               }
