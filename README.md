@@ -97,7 +97,7 @@ http
     {
       // 可指定 boundary，默认自动从 rs.headers['content-type'] 中解析
       boundary?: string;
-      // 请求体的解析过程出错时，是否自动调用 rs.destroy() 和 file.destroy()，默认是 true
+      // 请求体的解析过程出错时，是否自动调用 rs.destroy()，默认是 false
       autoDestroy?: boolean;
       // 各种限制相关的参数，超出限制后会报错并停止解析
       limits?: {
