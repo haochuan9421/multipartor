@@ -1,3 +1,5 @@
+# ⚠️ This repo has Moved to [@stream-toolbox/multipart](https://www.npmjs.com/package/@stream-toolbox/multipart)
+
 # multipartor
 
 multipartor 是一款用于处理 `multipart/form-data` 类型请求的 Node.js 请求体解析工具，这种类型的请求常用于文件上传。

@@ -1,6 +1,6 @@
 {
   "name": "multipartor",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "A streaming parser for multipart/form-data",
   "main": "index.js",
   "types": "index.d.ts",
